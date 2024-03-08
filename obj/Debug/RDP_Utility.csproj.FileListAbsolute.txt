@@ -1,0 +1,14 @@
+E:\RDP_Utility\RDP_Utility\bin\Debug\RDP_Utility.exe.config
+E:\RDP_Utility\RDP_Utility\bin\Debug\RDP_Utility.exe
+E:\RDP_Utility\RDP_Utility\bin\Debug\RDP_Utility.pdb
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.csproj.AssemblyReference.cache
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.csproj.SuggestedBindingRedirects.cache
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.Properties.Resources.resources
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.csproj.GenerateResource.cache
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.csproj.CoreCompileInputs.cache
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.exe
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.pdb
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.Main.resources
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.Detail.resources
+E:\RDP_Utility\RDP_Utility\bin\Debug\System.Management.Automation.dll
+E:\RDP_Utility\RDP_Utility\obj\Debug\RDP_Utility.csproj.CopyComplete
