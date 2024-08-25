@@ -11,6 +11,7 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using RDP_Utility;
 
 namespace RDP_Utility
 {
@@ -165,6 +166,10 @@ namespace RDP_Utility
                 vmInformation.Desktopwidth = textBoxWidth.Text;
                 vmInformation.Desktopheight = textBoxHeight.Text;
             }
+            if(!Directory.Exists(currentpath + "\\data\\rdp files"))
+            {
+                Directory.CreateDirectory(currentpath + "\\data\\rdp files");
+            }
             try
             {
                 StreamWriter sw = new StreamWriter(currentpath + "\\data\\rdp files\\" + rdpfilename + ".rdp", false);
@@ -240,14 +245,24 @@ namespace RDP_Utility
                 }
 
                 this.backfunction();
-
+                WriteLog(textBoxHostName.Text, $"New Added.");
             }
-
-
+            else
+            {
+                WriteLog(textBoxHostName.Text, $"Modified.");
+            }
             this.Close();
-
-
         }
+        public void WriteLog(string hostName, string message)
+        {
+            string time = System.DateTime.Now.ToString("yyyy-MM-dd HH：mm：ss");
+            string logfilePath = Directory.GetCurrentDirectory() + "\\data\\log.txt";
+            string s = File.ReadAllText(logfilePath);
+            string logline = $"{time}\t{hostName}\t{message}";
+            s = s.Insert(0, logline + "\r\n");
+            File.WriteAllText(logfilePath, s);
+        }
+
         public string PowerShellExc(string command) //function for PowerShell Exculte
         {
             try
@@ -274,5 +289,16 @@ namespace RDP_Utility
 
         }
 
+        private void pictureBoxSeePassword_Click(object sender, EventArgs e)
+        {
+            if(textBoxPassword.PasswordChar == '*')
+            {
+                textBoxPassword.PasswordChar = new char();
+            }
+            else
+            {
+                textBoxPassword.PasswordChar = '*';
+            }
+        }
     }
 }

@@ -11,8 +11,8 @@ using System.IO;
 using System.Security;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
+//using System.Management.Automation;
+//using System.Management.Automation.Runspaces;
 using System.Security.Cryptography;
 using System.Diagnostics;
 
@@ -33,6 +33,7 @@ namespace RDP_Utility
         //create list to store VMinformation
         List<VMInformation> vminformations = new List<VMInformation>();
         //refreshVMlist when page load or any data modified
+        readonly string logfilePath = Directory.GetCurrentDirectory() + "\\data\\log.txt";
         private void RefreshVMList()
         {
             //make sure value changed sub didn't work
@@ -112,7 +113,12 @@ namespace RDP_Utility
                     {
                         try
                         {
+                            if(!Directory.Exists(currentpath + "\\data"))
+                            {
+                                Directory.CreateDirectory(currentpath + "\\data");
+                            }
                             File.Create(path).Close();
+                            File.Create(logfilePath).Close();
                             result = 3;
                         }catch (Exception)
                         {
@@ -139,7 +145,13 @@ namespace RDP_Utility
 
         private void buttonConnect_Click(object sender, EventArgs e)
         {
-            string hostname = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            ConnectVM();
+        }
+        
+        private void ConnectVM()
+        {
+            //string hostname = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            string hostname = dataGridViewVMList.Rows[dataGridViewVMList.CurrentRow.Index].Cells[0].Value.ToString();
             string rdpfilename = hostname.Replace(":", "-"); // ":" can not use as file name
             string path = currentpath + "\\data\\rdp files\\" + rdpfilename + ".rdp";
             try
@@ -149,8 +161,9 @@ namespace RDP_Utility
             }
             catch (Exception)
             {
-                MessageBox.Show("Open file: "+path+" failed", "Warning");
+                MessageBox.Show("Open file: " + path + " failed", "Warning");
             }
+
         }
 
         private void dataGridViewVMList_CellValueChanged(object sender, DataGridViewCellEventArgs e)
@@ -167,6 +180,7 @@ namespace RDP_Utility
                 //}
                 vminformations[dataGridViewVMList.CurrentRow.Index].Comment = Convert.ToString(dataGridViewVMList.CurrentCell.Value);
                 WriteVMInformationToFile();
+                WriteLog(vminformations[dataGridViewVMList.CurrentRow.Index].Hostname, $"Change comment to: [{Convert.ToString(dataGridViewVMList.CurrentCell.Value)}]");
                 MessageBox.Show("Comment was changed successfully.", "Information");
             }
         }
@@ -181,6 +195,11 @@ namespace RDP_Utility
         private void buttonDelete_Click(object sender, EventArgs e)
         {
             string hostname = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            DialogResult messageboxResult = MessageBox.Show($"Are you sure you want to delete the RDP of: [{hostname}]. ?", "Confirm", MessageBoxButtons.YesNo);
+            if (messageboxResult == System.Windows.Forms.DialogResult.No)
+            {
+                return;
+            }
             foreach (VMInformation vm in vminformations)
             {
                 if (vm.Hostname == hostname)
@@ -200,6 +219,8 @@ namespace RDP_Utility
             }
             WriteVMInformationToFile();
             RefreshVMList();
+            WriteLog(hostname, $"Deleted.");
+
         }
 
         public string PowerShellExc(string command)
@@ -227,7 +248,237 @@ namespace RDP_Utility
             }
 
         }
+
+        private void pictureBoxLogFile_Click(object sender, EventArgs e)
+        {
+            if (!File.Exists(logfilePath))
+            {
+                File.Create(logfilePath).Close();
+            }
+            try
+            {
+                Process.Start(logfilePath);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Open log file failed.", "Warning");
+            }
+        }
+
+        public void WriteLog(string hostName,string message)
+        {
+            string time = System.DateTime.Now.ToString("yyyy-MM-dd HH：mm：ss");
+            string s = File.ReadAllText(logfilePath);
+            string logline = $"{time}\t{hostName}\t{message}";
+            s = s.Insert(0, logline + "\r\n");
+            File.WriteAllText(logfilePath, s);
+        }
+
+        private void pictureBoxUp_Click(object sender, EventArgs e)
+        {
+            pictureBoxUp.Enabled = false;
+            pictureBoxDown.Enabled = false;
+            pictureBoxTop.Enabled = false;
+            pictureBoxBottom.Enabled = false;
+            int selectIndex = dataGridViewVMList.CurrentRow.Index;
+            int scrollIndex = dataGridViewVMList.FirstDisplayedScrollingRowIndex;
+            if (selectIndex <= 0) 
+            {
+                pictureBoxUp.Enabled = true;
+                pictureBoxDown.Enabled = true;
+                pictureBoxTop.Enabled = true;
+                pictureBoxBottom.Enabled = true;
+                return;
+            }
+            string hostnameChange = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            string path = currentpath + "\\data\\VMInformation.txt";
+            List<string> readFile = File.ReadAllLines(path).ToList();
+            List<string> writeFile = new List<string>();
+            foreach (string line in readFile)
+            {
+                string currenthostname = line.Substring(0, line.IndexOf("#"));
+                if(currenthostname==hostnameChange)
+                {
+                    string cachline = writeFile.Last();
+                    writeFile.RemoveAt(writeFile.Count - 1);
+                    writeFile.Add(line);
+                    writeFile.Add(cachline);
+                }
+                else
+                {
+                    writeFile.Add(line);
+                }
+            }
+            File.WriteAllLines(path, writeFile);
+            RefreshVMList();
+            dataGridViewVMList.FirstDisplayedScrollingRowIndex = scrollIndex;
+            dataGridViewVMList.CurrentCell = dataGridViewVMList.Rows[selectIndex-1].Cells[0];
+            pictureBoxUp.Enabled = true;
+            pictureBoxDown.Enabled = true;
+            pictureBoxTop.Enabled = true;
+            pictureBoxBottom.Enabled = true;
+
+        }
+
+        private void pictureBoxDown_Click(object sender, EventArgs e)
+        {
+            pictureBoxUp.Enabled = false;
+            pictureBoxDown.Enabled = false;
+            pictureBoxTop.Enabled = false;
+            pictureBoxBottom.Enabled = false;
+            int selectIndex = dataGridViewVMList.CurrentRow.Index;
+            int scrollIndex = dataGridViewVMList.FirstDisplayedScrollingRowIndex;
+            if (selectIndex >= dataGridViewVMList.Rows.Count - 1) 
+            {
+                pictureBoxUp.Enabled = true;
+                pictureBoxDown.Enabled = true;
+                pictureBoxTop.Enabled = true;
+                pictureBoxBottom.Enabled = true;
+                return;
+            }
+            string hostnameChange = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            string path = currentpath + "\\data\\VMInformation.txt";
+            List<string> readFile = File.ReadAllLines(path).ToList();
+            List<string> writeFile = new List<string>();
+            string cachline = "";
+            foreach (string line in readFile)
+            {
+                string currenthostname = line.Substring(0, line.IndexOf("#"));
+
+                if (currenthostname == hostnameChange)
+                {
+                    cachline = line;
+                }
+                else
+                {
+                    writeFile.Add(line);
+                    if (cachline != "")
+                    {
+                        writeFile.Add(cachline);
+                        cachline = "";
+                    }
+                }
+            }
+            File.WriteAllLines(path, writeFile);
+            RefreshVMList();
+            dataGridViewVMList.FirstDisplayedScrollingRowIndex = scrollIndex;
+            dataGridViewVMList.CurrentCell = dataGridViewVMList.Rows[selectIndex + 1].Cells[0];
+            pictureBoxUp.Enabled = true;
+            pictureBoxDown.Enabled = true;
+            pictureBoxTop.Enabled = true;
+            pictureBoxBottom.Enabled = true;
+        }
+
+        private void pictureBoxTop_Click(object sender, EventArgs e)
+        {
+            pictureBoxUp.Enabled = false;
+            pictureBoxDown.Enabled = false;
+            pictureBoxTop.Enabled = false;
+            pictureBoxBottom.Enabled = false;
+            int selectIndex = dataGridViewVMList.CurrentRow.Index;
+            int scrollIndex = dataGridViewVMList.FirstDisplayedScrollingRowIndex;
+            if (selectIndex <= 0)
+            {
+                pictureBoxUp.Enabled = true;
+                pictureBoxDown.Enabled = true;
+                pictureBoxTop.Enabled = true;
+                pictureBoxBottom.Enabled = true;
+                return;
+            }
+            string hostnameChange = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            string path = currentpath + "\\data\\VMInformation.txt";
+            List<string> readFile = File.ReadAllLines(path).ToList();
+            List<string> writeFile = new List<string>();
+            string cachline = "";
+            foreach (string line in readFile)
+            {
+                string currenthostname = line.Substring(0, line.IndexOf("#"));
+                if (currenthostname == hostnameChange)
+                {
+                    cachline = line;
+                }
+            }
+            writeFile.Add(cachline);
+            foreach (string line in readFile)
+            {
+                string currenthostname = line.Substring(0, line.IndexOf("#"));
+                if (currenthostname != hostnameChange)
+                {
+                    writeFile.Add(line);
+                }
+            }
+            File.WriteAllLines(path, writeFile);
+            RefreshVMList();
+            dataGridViewVMList.FirstDisplayedScrollingRowIndex = scrollIndex;
+            dataGridViewVMList.CurrentCell = dataGridViewVMList.Rows[0].Cells[0];
+            pictureBoxUp.Enabled = true;
+            pictureBoxDown.Enabled = true;
+            pictureBoxTop.Enabled = true;
+            pictureBoxBottom.Enabled = true;
+        }
+
+        private void pictureBoxBottom_Click(object sender, EventArgs e)
+        {
+            pictureBoxUp.Enabled = false;
+            pictureBoxDown.Enabled = false;
+            pictureBoxTop.Enabled = false;
+            pictureBoxBottom.Enabled = false;
+            int selectIndex = dataGridViewVMList.CurrentRow.Index;
+            int scrollIndex = dataGridViewVMList.FirstDisplayedScrollingRowIndex;
+            if (selectIndex >= dataGridViewVMList.Rows.Count - 1)
+            {
+                pictureBoxUp.Enabled = true;
+                pictureBoxDown.Enabled = true;
+                pictureBoxTop.Enabled = true;
+                pictureBoxBottom.Enabled = true;
+                return;
+            }
+            string hostnameChange = vminformations[dataGridViewVMList.CurrentRow.Index].Hostname;
+            string path = currentpath + "\\data\\VMInformation.txt";
+            List<string> readFile = File.ReadAllLines(path).ToList();
+            List<string> writeFile = new List<string>();
+            string cachline = "";
+            foreach (string line in readFile)
+            {
+                string currenthostname = line.Substring(0, line.IndexOf("#"));
+                if (currenthostname == hostnameChange)
+                {
+                    cachline = line;
+                }
+                else
+                {
+                    writeFile.Add(line);
+                }
+            }
+            writeFile.Add(cachline);
+            File.WriteAllLines(path, writeFile);
+            RefreshVMList();
+            dataGridViewVMList.FirstDisplayedScrollingRowIndex = scrollIndex;
+            dataGridViewVMList.CurrentCell = dataGridViewVMList.Rows[dataGridViewVMList.Rows.Count - 1].Cells[0];
+            pictureBoxUp.Enabled = true;
+            pictureBoxDown.Enabled = true;
+            pictureBoxTop.Enabled = true;
+            pictureBoxBottom.Enabled = true;
+
+        }
+
+        private void buttonDebug_Click(object sender, EventArgs e)
+        {
+            int scrollIndex = dataGridViewVMList.FirstDisplayedScrollingRowIndex;
+            MessageBox.Show(scrollIndex.ToString());
+            dataGridViewVMList.FirstDisplayedScrollingRowIndex = 10;
+
+        }
+
+        private void dataGridViewVMList_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 0 && e.RowIndex >= 0) 
+            {
+                ConnectVM();
+            }
+        }
     }
+
     //Define class for VM information
     public class VMInformation
     {
