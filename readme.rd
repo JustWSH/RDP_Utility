@@ -4,4 +4,4 @@ The utility is using mstsc.exe to connect to the RDP sessions.
 
 The utility is a portable version, no installation is required, and it is ready to use when unzipped.
 
-![image.png](AppCreenshot.png)
+![image.png](blob/main/AppScreenShot.png)
